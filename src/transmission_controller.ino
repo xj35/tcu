@@ -67,9 +67,9 @@
 
 // Define Constants
 
-#define TIRE_DIA_IN           ((unsigned long) 23)
+#define TIRE_DIA_IN           ((unsigned long) 26)
 #define REV_PER_MILE          ((unsigned long) (12 * 5280 * 10000) / (TIRE_DIA_IN * 31415))
-#define FINAL_DRIVE_RATIO_K   3270  // Final back end drive ratio x1000
+#define FINAL_DRIVE_RATIO_K   3730  // Final back end drive ratio x1000
 #define RED_LINE              5000  // The maximum RPM we'll allow a downshift in to
 #define PULSES_PER_REV        40    // 4L60E's claim to have 40 pulses per revolution of the drive shaft
 // #define INCHES_PER_PULSE      5.907  // PI * TIRE_DIA_IN * FINAL_DRIVE_RATIO / PULSES_PER_REV  (milli-inches per pulse) using 23, 3.27, 40
