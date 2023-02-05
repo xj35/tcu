@@ -7,6 +7,7 @@
 // 4L60E technical manual: http://jd.offroadtb.com/trans-docs/4l60e-electronic-controls.pdf
 
 #include <ArduinoBLE.h>
+#include <assert.h>
 
 // Define Pins
 #define SPEED_IN    12   // Line to speed sensor interface board
@@ -138,22 +139,32 @@ unsigned long VS_PS_Switch_us = 0;    // How long to keep the VSPS line in curre
 int VS_PS_Pin = 0;                    // State of the pin, starts out off
   
 
-// If we shift now, is it a money shift?
-bool IsSafeToShiftDown(int currentGear, int currentRPM) {
-  if (currentGear <= 1) {
-    return true;
+/*****************************************************************************
+* IsSafeToShiftDown
+* Parameters: CurrentGear (car's current gear), CurrentRPM (car's current RPK)
+* Return Value: bool (true if we can shift down without exceeding red line)
+* Globals: None
+*
+* Determines whether or not a down shift is possible without exceeding
+* red line at the current gear and RPM.
+******************************************************************************/
+bool IsSafeToShiftDown(int CurrentGear, int CurrentRPM)
+{
+  assert(0 < CurrentGear && CurrentGear < 5);
+  if (CurrentGear == 1)
+  {
+    // can't downshift from 1
+    return false;
   }
-  if (4 < currentGear) {
-    // is there an assert available?
-    return true;
-  }
-  int targetRPM = (currentRPM * TrannyGearRatio_K[currentGear - 2]) / TrannyGearRatio_K[currentGear - 1];
+  int CurrentGearRatio = TrannyGearRatio_K[CurrentGear - 1];
+  int NewGearRatio = TrannyGearRatio_K[CurrentGear - 2];
+  int TargetRPM = (CurrentRPM * NewGearRatio) / CurrentGearRatio;
 
   char buf[128];
-  sprintf(buf, "MONEY Gear %d RPM %d NEW RPM %d", currentGear, currentRPM, targetRPM);
+  sprintf(buf, "MONEY Gear %d RPM %d NEW RPM %d", CurrentGear, CurrentRPM, TargetRPM);
   Serial.write(buf);
   
-  return targetRPM <= RED_LINE;
+  return TargetRPM <= RED_LINE;
 }
 
 
