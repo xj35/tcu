@@ -139,18 +139,21 @@ int VS_PS_Pin = 0;                    // State of the pin, starts out off
   
 
 // If we shift now, is it a money shift?
-// gear is zero indexed.
 bool IsSafeToShiftDown(int currentGear, int currentRPM) {
-  if (currentGear < 1) {
+  if (currentGear <= 1) {
     return true;
   }
-  int targetRpm = (currentRPM * TrannyGearRatio_K[currentGear - 1]) / TrannyGearRatio_K[currentGear];
+  if (4 < currentGear) {
+    // is there an assert available?
+    return true;
+  }
+  int targetRPM = (currentRPM * TrannyGearRatio_K[currentGear - 2]) / TrannyGearRatio_K[currentGear - 1];
 
   char buf[128];
-  sprintf(buf, "MONEY Gear %d RPM %d NEW RPM %d", currentGear, currentRPM, targetRpm);
+  sprintf(buf, "MONEY Gear %d RPM %d NEW RPM %d", currentGear, currentRPM, targetRPM);
   Serial.write(buf);
   
-  return targetRpm <= RED_LINE;
+  return targetRPM <= RED_LINE;
 }
 
 
@@ -491,7 +494,7 @@ void loop() {
         {
           if ((micros() - Shift_Deb_time_us) >= SHIFT_DEB_PERIOD)  // We have waited long enough
           {
-            if (IsSafeToShiftDown(Gear - 1, RPM))
+            if (IsSafeToShiftDown(Gear, RPM))
             {                
               GearSelect(Gear - 1);            // We won't blow up the engine: do the downshift
               // DriveState = WAIT_FOR_IDLE;   // We're not doing this, because you can hold the down shift and it'll keep downshifting until you let up
