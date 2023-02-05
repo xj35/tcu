@@ -138,6 +138,21 @@ unsigned long VS_PS_Switch_us = 0;    // How long to keep the VSPS line in curre
 int VS_PS_Pin = 0;                    // State of the pin, starts out off
   
 
+// If we shift now, is it a money shift?
+// gear is zero indexed.
+bool IsSafeToShiftDown(int currentGear, int currentRPM) {
+  if (currentGear < 1) {
+    return true;
+  }
+  int targetRpm = (currentRPM * TrannyGearRatio_K[currentGear - 1]) / TrannyGearRatio_K[currentGear];
+
+  char buf[128];
+  sprintf(buf, "MONEY Gear %d RPM %d NEW RPM %d", currentGear, currentRPM, targetRpm);
+  Serial.write(buf);
+  
+  return targetRpm <= RED_LINE;
+}
+
 
 /*****************************************************************************
 * RPM_ISR
@@ -297,7 +312,7 @@ void setup() {
   {
     if (RPM_Time > 0)
     {
-      RPM = (unsigned long) 10000000 / RPM_Time;  // 1E6 microsec/sec * 60 sec/min / 6 fires/rev = 1E7 microsec RPMs
+      RPM = (unsigned long) 20000000 / RPM_Time;  // 1E6 microsec/sec * 60 sec/min / 3 fires/rev = 2E7 microsec RPMs
       New_RPM = 0;
     }
     else
@@ -394,7 +409,7 @@ void loop() {
     {
       if (New_RPM)
       {
-        RPM = (unsigned long) 10000000 / RPM_Time;  // 1E6 microsec/sec * 60 sec/min / 6 fires/rev = 1E7 microsec RPMs
+        RPM = (unsigned long) 20000000 / RPM_Time;  // 1E6 microsec/sec * 60 sec/min / 3 fires/rev = 2E7 microsec RPMs
         New_RPM = 0;
       }
       else
@@ -476,7 +491,7 @@ void loop() {
         {
           if ((micros() - Shift_Deb_time_us) >= SHIFT_DEB_PERIOD)  // We have waited long enough
           {
-            if (RPMLookUp(Speed, Gear - 1) <= RED_LINE)   // Check what the RPMs would be in the next lower gear
+            if (IsSafeToShiftDown(Gear - 1, RPM))
             {                
               GearSelect(Gear - 1);            // We won't blow up the engine: do the downshift
               // DriveState = WAIT_FOR_IDLE;   // We're not doing this, because you can hold the down shift and it'll keep downshifting until you let up
